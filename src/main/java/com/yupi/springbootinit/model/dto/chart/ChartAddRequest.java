@@ -19,6 +19,10 @@ import java.util.List;
 @Data
 public class ChartAddRequest implements Serializable {
 
+    /**
+     * 表名
+     */
+    private String name;
 
     /**
      * 分析目标

@@ -40,6 +40,11 @@ public class User implements Serializable {
     private String userRole;
 
     /**
+     * 用户头像
+     */
+    private String userAvatar;
+
+    /**
      * 创建时间
      */
     private Date createTime;

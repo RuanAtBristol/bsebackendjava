@@ -21,8 +21,13 @@ public class ChartUpdateRequest implements Serializable {
     /**
      * id
      */
-//    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
+
+    /**
+     * 表名
+     */
+    private String name;
 
     /**
      * 分析目标
