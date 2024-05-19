@@ -2,8 +2,10 @@ package com.yupi.springbootinit.model.dto.chart;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class GenChartByAIRequest {
+public class GenChartByAIRequest implements Serializable {
 
     /**
      * 表名
