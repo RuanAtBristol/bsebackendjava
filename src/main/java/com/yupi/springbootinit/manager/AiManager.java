@@ -32,7 +32,7 @@ public class AiManager {
         if (response == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "yu-cong-ming-client 返回为空");
         }
-        return response.getData().getContent();
+        return response.getData() == null ? response.getMessage() : response.getData().getContent();
     }
 
 }

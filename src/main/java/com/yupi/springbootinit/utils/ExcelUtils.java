@@ -1,17 +1,19 @@
 package com.yupi.springbootinit.utils;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.support.ExcelTypeEnum;
+import com.yupi.springbootinit.common.ErrorCode;
+import com.yupi.springbootinit.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +34,20 @@ public class ExcelUtils {
     public static String excelToCsv(MultipartFile multipartFile) {
 //        File file = null;
 //        try {
-//            file = ResourceUtils.getFile("classpath:网站数据.xlsx");
+//            file = ResourceUtils.getFile("classpath:test_data.xlsx");
 //        } catch (FileNotFoundException e) {
 //            e.printStackTrace();
 //        }
+        String originalFilename = multipartFile.getOriginalFilename();
+        String suffix = FileUtil.getSuffix(originalFilename);
+        if(StringUtils.equals(suffix, "csv")){
+            try {
+                return IOUtils.toString(multipartFile.getInputStream(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "File format error");
+            }
+        }
+
         List<Map<Integer, String>> list = null;
         try {
             list = EasyExcel.read(multipartFile.getInputStream())

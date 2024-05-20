@@ -23,6 +23,9 @@ create table if not exists user
     index idx_userAccount (userAccount)
 ) comment '用户' collate = utf8mb4_unicode_ci;
 
+INSERT INTO user (userAccount, userPassword, userName)
+VALUES ('bse', 'bse', 'bse');
+
 create table if not exists chart
 (
     id         bigint auto_increment comment 'id' primary key,
@@ -37,3 +40,4 @@ create table if not exists chart
     updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     isDelete   tinyint  default 0                 not null comment '是否删除'
 )comment '图表信息表' collate = utf8mb4_unicode_ci;
+

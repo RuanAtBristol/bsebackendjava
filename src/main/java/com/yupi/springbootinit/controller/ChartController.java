@@ -1,13 +1,14 @@
 package com.yupi.springbootinit.controller;
 
+import cn.hutool.core.io.FileUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.google.gson.Gson;
 import com.yupi.springbootinit.annotation.AuthCheck;
 import com.yupi.springbootinit.common.BaseResponse;
 import com.yupi.springbootinit.common.DeleteRequest;
 import com.yupi.springbootinit.common.ErrorCode;
 import com.yupi.springbootinit.common.ResultUtils;
+import com.yupi.springbootinit.constant.AiConstant;
 import com.yupi.springbootinit.constant.CommonConstant;
 import com.yupi.springbootinit.constant.UserConstant;
 import com.yupi.springbootinit.exception.BusinessException;
@@ -24,19 +25,18 @@ import com.yupi.springbootinit.utils.SqlUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.List;
 
 /**
- * 帖子接口
+ * 智能生成图表
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @RestController
 @RequestMapping("/chart")
@@ -52,7 +52,6 @@ public class ChartController {
     @Resource
     private UserService userService;
 
-    private final static Gson GSON = new Gson();
 
     // region 增删改查
 
@@ -242,16 +241,26 @@ public class ChartController {
      */
     @PostMapping("/gen")
     public BaseResponse<ChatResponse> genChartByAI(@RequestPart("file") MultipartFile multipartFile,
-                                             GenChartByAIRequest genChartByAIRequest, HttpServletRequest request) {
+                                                   GenChartByAIRequest genChartByAIRequest, HttpServletRequest request) {
         String chartType = genChartByAIRequest.getChartType();
         String name = genChartByAIRequest.getName();
         String goal = genChartByAIRequest.getGoal();
         // 校验
         ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "goal cannot be empty");
         ThrowUtils.throwIf(StringUtils.isNotBlank(name) && name.length() > 100, ErrorCode.PARAMS_ERROR, "name length must not exceed 100");
-        User loginUser = userService.getLoginUser(request);
+        // 校验文件
+        String originalFilename = multipartFile.getOriginalFilename();
+        long size = multipartFile.getSize();
+        final long ONE_MB = 1024 * 1024L;
+        // 文件大小不超过 1MB
+        ThrowUtils.throwIf(size > ONE_MB, ErrorCode.PARAMS_ERROR, "file size cannot exceed 1MB");
+        // 文件类型只能是 xlsx 或 xls
+        String suffix = FileUtil.getSuffix(originalFilename);
+        final List<String> validSuffixes = Arrays.asList("xlsx", "xls", "csv");
+        ThrowUtils.throwIf(!validSuffixes.contains(suffix), ErrorCode.PARAMS_ERROR, "file suffix must be xlsx or xls or csv");
 
-        long modelId = 1659171950288818178L;
+        User loginUser = userService.getLoginUser(request);
+        long modelId = AiConstant.MODEL_ID;
 
         // 用户输入
         StringBuilder userInput = new StringBuilder();
@@ -259,7 +268,7 @@ public class ChartController {
 
         // 拼接分析目标
         String userGoal = goal;
-        if(StringUtils.isNotBlank(chartType)){
+        if (StringUtils.isNotBlank(chartType)) {
             userGoal += "，图表类型：" + chartType;
         }
         userInput.append(userGoal).append("\n");
@@ -270,7 +279,7 @@ public class ChartController {
 
         String result = aiManager.doChat(modelId, userInput.toString());
         String[] splits = result.split("【【【【【");
-        if(splits.length < 3){
+        if (splits.length < 3) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI 生成错误");
         }
         String genChart = splits[1].trim();
@@ -294,41 +303,9 @@ public class ChartController {
         chatResponse.setChartId(chart.getId());
         return ResultUtils.success(chatResponse);
     }
-    // 用户输入
-//        StringBuilder userInput = new StringBuilder();
-//        userInput.append("你是一个数据分析师,接下来我会给你我的分析目标和原始数据，请告诉我分析结论。\n");
-//        userInput.append("分析目标：").append(goal).append("\n");
-//
-//        // 读取用户上传的excel文件，转成csv
-//        String result = ExcelUtils.excelToCsv(multipartFile);
-//        userInput.append("数据：").append(result).append("\n");
-//        return ResultUtils.success(userInput.toString());
-
-//        // 读取用户上传的excel文件，进行处理
-//        User loginUser = userService.getLoginUser(request);
-//        // 文件目录：根据业务、用户来划分
-//        String uuid = RandomStringUtils.randomAlphanumeric(8);
-//        String filename = uuid + "-" + multipartFile.getOriginalFilename();
-//        File file = null;
-//        try {
-//            // 返回可访问地址
-//            return ResultUtils.success("");
-//        } catch (Exception e) {
-////            log.error("file upload error, filepath = " + filepath, e);
-//            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
-//        } finally {
-//            if (file != null) {
-//                // 删除临时文件
-//                boolean delete = file.delete();
-//                if (!delete) {
-////                    log.error("file delete error, filepath = {}", filepath);
-//                }
-//            }
-//        }
-
 
     /**
-     * 获取查询包装类
+     * 获取查询SQL包装
      *
      * @param chartQueryRequest
      * @return
